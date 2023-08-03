@@ -10,8 +10,8 @@
     "editor.formatOnSave": true,
     "python.formatting.provider": "none",
     "python.formatting.autopep8Args": [
-        // "--max-line-length",
-        // "100",
+        "--max-line-length",
+        "100",
         "--experimental"
     ],
     // linting
