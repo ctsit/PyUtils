@@ -1,6 +1,6 @@
 import unittest
 
-from ctsit_python_utils import __main__
+from py_utils import __main__
 
 
 class TestMain(unittest.TestCase):

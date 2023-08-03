@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from ctsit_python_utils import utils
+from py_utils import utils
 
 
 class TestUtils(unittest.TestCase):
