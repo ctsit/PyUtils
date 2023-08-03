@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "package_name"
-version = "1.0.0"
+name = "ctsit_python_utils"
+version = "0.1.0"
 authors = [{ name = "Michael Bentz", email = "mbentz@ufl.edu" }]
 description = ""
 readme = "README.md"
@@ -16,9 +16,10 @@ classifiers = [
 ]
 dependencies = []
 
-[project.scripts]
-package_name = "package_name.__main__:main"
+# We don't need this for now
+# [project.scripts]
+# package_name = "package_name.__main__:main"
 
 [project.urls]
-"Homepage" = "https://github.com/ctsit/package_name"
-"Bug Tracker" = "https://github.com/ctsit/package_name/issues"
+"Homepage" = "https://github.com/ctsit/ctsit_python_utils"
+"Bug Tracker" = "https://github.com/ctsit/ctsit_python_utils/issues"
