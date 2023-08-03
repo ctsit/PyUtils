@@ -24,6 +24,8 @@ _List the steps needed to make sure this thing works. Be precise._
 
 All of these should have a check by them. Any exception requires an explanation.
 
+* [ ] I have added docstrings with details on keyword arguments to new functions following the convention detailed in https://peps.python.org/pep-0257/#multi-line-docstrings.
+* [ ] I have added type hinting to new function parameters.
 * [ ] I matched the style of the existing code.
 * [ ] I added and updated any relevant documentation (inline, `README`, `CHANGELOG`, and such).
 * [ ] I used Python's type hinting.
