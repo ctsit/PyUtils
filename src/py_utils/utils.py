@@ -1,8 +1,58 @@
-import smtplib
 import os
+import re
+import smtplib
 
 from email.message import EmailMessage
 from email.policy import SMTP
+
+
+def get_unique_filename(path_to_file: str) -> str:
+    """Get a unique filename.
+
+    Checks if the file exists, and if the file exists the function returns a unique
+    incremented filename. If the file doesn't exist the function returns the `path_to_file`
+    that was provided. For example, if `my_file.pdf` already exists the function will return
+    `my_file (1).pdf`, otherwise `my_file.pdf` is returned.
+
+    Args:
+        path_to_file (str): The path to the file to check.
+
+    Returns:
+        (str): A unique filename.
+
+    Raises:
+        OSError: If there is an error accessing the directory.
+    """
+    if not os.path.exists(path_to_file):
+        return path_to_file
+
+    name, extension = os.path.splitext(path_to_file)
+
+    count = 1
+
+    new_filename = f'{name} ({count}){extension}'
+    while os.path.exists(new_filename):
+        count += 1
+        new_filename = f'{name} ({count}){extension}'
+
+    return new_filename
+
+
+def is_python_file(filename: str) -> bool:
+    """Checks if the filename is a python file i.e., file.py
+
+    Args:
+        filename (str): The filename to check
+
+    Returns:
+        If True if the filename is a python file, and false otherwise
+    """
+    pattern = r"\.py$"
+
+    if re.search(pattern, filename):
+        return True
+
+    return False
 
 
 def send_email(
@@ -40,35 +90,3 @@ def send_email(
     else:
         with smtplib.SMTP(host) as server:
             server.send_message(msg)
-
-
-def get_unique_filename(path_to_file: str) -> str:
-    """Get a unique filename.
-
-    Checks if the file exists, and if the file exists the function returns a unique
-    incremented filename. If the file doesn't exist the function returns the `path_to_file`
-    that was provided. For example, if `my_file.pdf` already exists the function will return
-    `my_file (1).pdf`, otherwise `my_file.pdf` is returned.
-
-    Args:
-        path_to_file (str): The path to the file to check.
-
-    Returns:
-        (str): A unique filename.
-
-    Raises:
-        OSError: If there is an error accessing the directory.
-    """
-    if not os.path.exists(path_to_file):
-        return path_to_file
-
-    name, extension = os.path.splitext(path_to_file)
-
-    count = 1
-
-    new_filename = f'{name} ({count}){extension}'
-    while os.path.exists(new_filename):
-        count += 1
-        new_filename = f'{name} ({count}){extension}'
-
-    return new_filename
