@@ -6,17 +6,21 @@ from email.policy import SMTP
 
 
 def send_email(
-        sender: str, recipients: list[str], subject: str, body: str | None = None,
+        host: str, sender: str, recipients: list[str], subject: str, body: str,
         file: str | None = None, output=None):
     """Sends an email using smtp.ufl.edu.
 
     Args:
+        host (str): The name of the remote host to which to connect.
         sender (str): The sender of the email, i.e., the "From" field.
         recipients (list[str]): The recipients to send the emails to.
         subject (str): The subject line of the email.
         body (str | None): The body of the email.
         file (str | None): The path to the file to send as an attachment
         output:
+
+    Returns:
+        None
     """
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -34,8 +38,8 @@ def send_email(
         with open(output, "wb") as fp:
             fp.write(msg.as_bytes(policy=SMTP))
     else:
-        with smtplib.SMTP("smtp.ufl.edu") as smtp:
-            smtp.send_message(msg)
+        with smtplib.SMTP(host) as server:
+            server.send_message(msg)
 
 
 def get_unique_filename(path_to_file: str) -> str:
@@ -50,7 +54,7 @@ def get_unique_filename(path_to_file: str) -> str:
         path_to_file (str): The path to the file to check.
 
     Returns:
-        A unique filename.
+        (str): A unique filename.
 
     Raises:
         OSError: If there is an error accessing the directory.
