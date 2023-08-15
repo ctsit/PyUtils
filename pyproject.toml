@@ -9,6 +9,7 @@ packages = [{ include = "py_utils" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+sqlalchemy = "^2.0.20"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/ctsit/PyUtils"
