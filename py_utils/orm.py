@@ -70,6 +70,9 @@ class DbClient():
     def create_tables(self, base, models: list):
         """Creates the database tables
 
+        The base is passed in to decouple model definition from this package. This way models can
+        be defined locally in a separate package rather than in this utility package.
+
         Args:
             base (`sqlalchemy.ext.declarative:declarative_base`): An instance of `declarative_base`
             used to define `sqlalchemy` data models. See `test_orm.py` for an example data class
