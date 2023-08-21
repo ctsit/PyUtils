@@ -1,9 +1,24 @@
+from email.message import EmailMessage
+from email.policy import SMTP
+
 import os
 import re
 import smtplib
 
-from email.message import EmailMessage
-from email.policy import SMTP
+
+def directory_exists(path_to_dir: str) -> bool:
+    """Checks if the directory exists
+
+    Args:
+        path_to_dir (str): The path to the directory to check.
+
+    Returns:
+        True if the directory exists, false otherwise.
+    """
+    if os.path.exists(path_to_dir) and os.path.isdir(path_to_dir):
+        return True
+    else:
+        return False
 
 
 def get_unique_filename(path_to_file: str) -> str:
