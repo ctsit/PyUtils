@@ -9,6 +9,15 @@ import unittest
 Base = declarative_base()
 
 
+class InvalidDataClass(Base):
+    __tablename__ = "invalid_data_class"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_date = Column(DateTime, default=func.now())
+    modified_date = Column(DateTime, default=func.now(), onupdate=func.now())
+    title = Column(String)
+
+
 class ImageInventory(Base):
     __tablename__ = 'image_inventory'
 
@@ -56,3 +65,21 @@ class TestOrm(unittest.TestCase):
 
         self.assertEqual(expected, actual)
         os.remove(sqlite_db)
+
+    def test_invalid_data_class(self):
+        sqlite_db = "test_db.db"
+        db_client = DbClient.sqlite(sqlite_db)
+        db_client.create_tables(Base, [InvalidDataClass])
+
+        data_to_insert = {
+            "title": "test title"
+        }
+        invalid_data_class = InvalidDataClass(**data_to_insert)
+
+        try:
+            db_client.insert_data(invalid_data_class)
+        except AttributeError as actual:
+            self.assertIsInstance(actual, AttributeError)
+            return
+
+        assert False
