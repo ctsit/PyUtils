@@ -29,6 +29,7 @@ class DbClient():
 
             self._engine = create_engine(connection_string, echo=echo)
             self._engine.connect()
+            logging.info(f"orm.py: Successfully connected to: {url}")
         except OperationalError as e:
             logging.error(f"orm.py: Connection failed: {e}")
             raise e
