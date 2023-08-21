@@ -11,7 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = delcarative_base()
 
 class DataClass(Base):
-    __tablename__ = "invalid_data_class"
+    __tablename__ = "data_class"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_date = Column(DateTime, default=func.now())
