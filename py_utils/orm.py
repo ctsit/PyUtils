@@ -129,7 +129,7 @@ class DbClient():
                 raise Exception(f"Model failed validation: {model}")
 
             session.commit()
-            logging.info("Data inserted successfully!")
+            logging.info(f"Data inserted successfully for {model.__tablename__}")
         except AttributeError as e:
             session.rollback()
             logging.error(
