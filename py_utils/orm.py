@@ -123,10 +123,12 @@ class DbClient():
         session.add(model)
 
         try:
-            # Validate the model instance
-            model.validate()
+            is_valid = model.validate()
 
-            # Commit the session to persist the changes
+            if not is_valid:
+                logging.error(f"Model failed validation: {model}")
+                raise Exception("Model failed validation")
+
             session.commit()
             logging.info("orm.py: Data inserted successfully!")
         except AttributeError as e:
