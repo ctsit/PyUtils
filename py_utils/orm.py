@@ -25,16 +25,16 @@ class DbClient():
         """
         try:
             connection_string = f"{driver}:///{url}"
-            logging.info(f"orm.py: Attempting to connect to: {url}")
+            logging.info(f"Attempting to connect to: {url}")
 
             self._engine = create_engine(connection_string, echo=echo)
             self._engine.connect()
-            logging.info(f"orm.py: Successfully connected to: {url}")
+            logging.info(f"Successfully connected to: {url}")
         except OperationalError as e:
-            logging.error(f"orm.py: Connection failed: {e}")
+            logging.error(f"Connection failed: {e}")
             raise e
         except Exception as e:
-            logging.error(f"orm.py: Failed to create engine with error of type: {type(e)}")
+            logging.error(f"Failed to create engine with error of type: {type(e)}")
             raise e
         self._sessionmaker = sessionmaker(bind=self._engine)
 
@@ -63,7 +63,7 @@ class DbClient():
                 conn.close()
         except Exception as e:
             logging.error(
-                "orm.py: Failed to create sqlite db. Double check that the path is correct.")
+                "Failed to create sqlite db. Double check that the path is correct.")
             raise e
 
         return cls("sqlite", path, echo)
@@ -89,15 +89,15 @@ class DbClient():
         try:
             inspector = inspect(self._engine)
         except Exception as e:
-            logging.error(f"orm.py: Failed to inspect engine with error of type: {type(e)}")
+            logging.error(f"Failed to inspect engine with error of type: {type(e)}")
             raise e
 
         for model in models:
             if not inspector.has_table(model.__tablename__):
                 base.metadata.create_all(self._engine)
-                logging.info(f"orm.py: Creating table: {model.__tablename__}")
+                logging.info(f"Creating table: {model.__tablename__}")
             else:
-                logging.info(f"orm.py: Table already exists: {model.__tablename__}")
+                logging.info(f"Table already exists: {model.__tablename__}")
 
     def insert_data(self, model):
         """Insert model data into database.
@@ -117,7 +117,7 @@ class DbClient():
         try:
             session = self._sessionmaker()
         except Exception as e:
-            logging.error(f"form.py: Failed to create session with error of type: {type(e)}")
+            logging.error(f"fFailed to create session with error of type: {type(e)}")
             raise e
 
         session.add(model)
@@ -129,22 +129,22 @@ class DbClient():
                 raise Exception(f"Model failed validation: {model}")
 
             session.commit()
-            logging.info("orm.py: Data inserted successfully!")
+            logging.info("Data inserted successfully!")
         except AttributeError as e:
             session.rollback()
             logging.error(
-                f"orm.py: Attribute Error: {str(e)}. Verify that a `validate` has been defined as "
+                f"Attribute Error: {str(e)}. Verify that a `validate` has been defined as "
                 f"part of the data class")
             raise e
         except IntegrityError as e:
             # Rollback the session in case of any integrity error
             session.rollback()
-            logging.error(f"orm.py: Integrity Error: {str(e)}")
+            logging.error(f"Integrity Error: {str(e)}")
             raise e
         except Exception as e:
             # Rollback the session in case of any other error
             session.rollback()
-            logging.error(f"orm.py: Error inserting data: {str(e)}")
+            logging.error(f"Error inserting data: {str(e)}")
             raise e
         finally:
             # Close the session
