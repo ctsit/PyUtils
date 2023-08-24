@@ -126,8 +126,7 @@ class DbClient():
             is_valid = model.validate()
 
             if not is_valid:
-                logging.error(f"Model failed validation: {model}")
-                raise Exception("Model failed validation")
+                raise Exception(f"Model failed validation: {model}")
 
             session.commit()
             logging.info("orm.py: Data inserted successfully!")
