@@ -72,7 +72,7 @@ def is_python_file(filename: str) -> bool:
 
 def send_email(
         host: str, sender: str, recipients: list[str], subject: str, body: str,
-        file: str | None = None, output=None):
+        *file: str, output=None):
     """Sends an email using smtp.ufl.edu.
 
     Args:
@@ -81,7 +81,7 @@ def send_email(
         recipients (list[str]): The recipients to send the emails to.
         subject (str): The subject line of the email.
         body (str | None): The body of the email.
-        file (str | None): The path to the file to send as an attachment
+        *file (str): The path(s) to the file(s) to send as an attachment.
         output:
 
     Returns:
@@ -94,10 +94,12 @@ def send_email(
     msg.set_content(body)
 
     if file:
-        with open(file, "rb") as file_obj:
-            msg.add_attachment(
-                file_obj.read(), maintype="text", subtype="plain", filename=file_obj.name
-            )
+        for f in file:
+            with open(f, "rb") as file_obj:
+                msg.add_attachment(
+                    file_obj.read(), maintype="text",
+                    subtype="plain", filename=os.path.basename(f)
+                )
 
     if output:
         with open(output, "wb") as fp:
