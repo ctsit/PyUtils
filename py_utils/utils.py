@@ -91,7 +91,7 @@ def send_email(
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.set_content(body)
+    msg.set_content(body, subtype='html')
 
     if file:
         for f in file:
