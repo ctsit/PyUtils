@@ -95,10 +95,8 @@ def send_email(
     pattern = r"<[^>]*>"
 
     if re.search(pattern, body) is not None:
-        print("HTML DETECTED")
         msg.set_content(body, subtype='html')
     else:
-        print("NORMAL STRING")
         msg.set_content(body)
 
     if file:
