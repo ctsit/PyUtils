@@ -91,7 +91,15 @@ def send_email(
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
-    msg.set_content(body, subtype='html')
+
+    pattern = r"<[^>]*>"
+
+    if re.search(pattern, body) is not None:
+        print("HTML DETECTED")
+        msg.set_content(body, subtype='html')
+    else:
+        print("NORMAL STRING")
+        msg.set_content(body)
 
     if file:
         for f in file:
