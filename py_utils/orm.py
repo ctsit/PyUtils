@@ -68,6 +68,17 @@ class DbClient():
 
         return cls("sqlite", path, echo)
 
+    def _convert_model_to_dict(self, model) -> dict:
+        """Returns dictionary representation of the provided model
+
+        Args:
+            model: A `sqlalchemy` data class
+
+        Returns:
+            dict
+        """
+        return {key: getattr(model, key) for key in model.__table__.columns.keys()}
+
     def create_tables(self, base, models: list):
         """Creates the database tables
 
@@ -99,7 +110,7 @@ class DbClient():
             else:
                 logging.info(f"Table already exists: {model.__tablename__}")
 
-    def insert_data(self, model):
+    def insert_data(self, model) -> dict:
         """Insert model data into database.
 
         The model is expected to have a `validate` function defined. See `test_orm.py` for an
@@ -109,7 +120,7 @@ class DbClient():
             model: A `sqlalchemy` data table class.
 
         Returns:
-            None
+            dict
 
         Raises:
             Exception: When failing to create a session to the `sqlalchemy` engine.
@@ -130,6 +141,8 @@ class DbClient():
 
             session.commit()
             logging.info(f"Data inserted successfully for {model.__tablename__}")
+
+            return self._convert_model_to_dict(model)
         except AttributeError as e:
             session.rollback()
             logging.error(
@@ -169,3 +182,40 @@ class DbClient():
 
         # Execute the query and return the results
         return session.query(model_class).all()
+
+    def update_model(self, model_class, id, **kwargs) -> dict:
+        """Update model with kwargs provided
+
+        Args:
+            model: A `sqlalchemy` data table class.
+
+        Returns:
+            dict
+
+        Raises:
+            Exception: When failing to create a session to the `sqlalchemy` engine.
+        """
+        try:
+            session = self._sessionmaker()
+        except Exception as e:
+            logging.error(f"fFailed to create session with error of type: {type(e)}")
+            raise e
+        # Retrieve the object that you want to update
+        object_to_update = session.query(model_class).get(id)
+
+        # Update the object with the provided values
+        for key, value in kwargs.items():
+            setattr(object_to_update, key, value)
+
+        try:
+            session.commit()
+
+            return self._convert_model_to_dict(object_to_update)
+        except Exception as e:
+            # Rollback the session in case of any other error
+            session.rollback()
+            logging.error(f"Error inserting data: {str(e)}")
+            raise e
+        finally:
+            # Close the session
+            session.close()
