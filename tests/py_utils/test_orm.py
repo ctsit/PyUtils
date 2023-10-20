@@ -121,9 +121,9 @@ class TestOrm(unittest.TestCase):
         actual = Image(**updated_data)
 
         created_image = self.db_client.insert_data(image)
-        self.db_client.update_model(Image, created_image["id"], **{"core": "dc"})
-
-        expected = self.db_client.query_model(Image)[0]
+        expected = Image(**self.db_client.update_model(Image,
+                         created_image["id"], **{"core": "dc"})
+                         )
 
         self.assertEqual(actual, expected)
 
