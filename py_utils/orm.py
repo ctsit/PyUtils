@@ -200,14 +200,15 @@ class DbClient():
         except Exception as e:
             logging.error(f"fFailed to create session with error of type: {type(e)}")
             raise e
-        # Retrieve the object that you want to update
-        object_to_update = session.query(model_class).get(id)
-
-        # Update the object with the provided values
-        for key, value in kwargs.items():
-            setattr(object_to_update, key, value)
 
         try:
+            # Retrieve the object that you want to update
+            object_to_update = session.query(model_class).get(id)
+
+            # Update the object with the provided values
+            for key, value in kwargs.items():
+                setattr(object_to_update, key, value)
+
             session.commit()
 
             return self._convert_model_to_dict(object_to_update)
