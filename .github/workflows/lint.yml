@@ -3,9 +3,9 @@ name: lint
 on:
   workflow_dispatch:
   push:
-    branches: [develop]
+    branches: [master, develop]
   pull_request:
-    branches: [develop]
+    branches: [master, develop]
 
 jobs:
   flake8-lint:
@@ -17,6 +17,6 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8.0"
+          python-version: "3.11.0"
       - name: flake8 Lint
         uses: py-actions/flake8@v2
