@@ -31,7 +31,7 @@ class ImageInventory(Base):
     fs_mod_date = Column(DateTime)
 
     def validate(self):
-        return (None and self.core is not None and self.status is not None
+        return (self.core is not None and self.status is not None
                 and self.image_type is not None and self.fs_mod_date is not None)
 
     def __str__(self):
