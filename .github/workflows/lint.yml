@@ -3,9 +3,9 @@ name: lint
 on:
   workflow_dispatch:
   push:
-    branches: [develop]
+    branches: [master, develop]
   pull_request:
-    branches: [develop]
+    branches: [master, develop]
 
 jobs:
   flake8-lint:
