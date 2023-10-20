@@ -94,8 +94,7 @@ class TestOrm(unittest.TestCase):
                 "fs_mod_date": datetime.now()
             }
             image = Image(**data_to_insert)
-            result = self.db_client.insert_data(image)
-            print(result)
+            self.db_client.insert_data(image)
 
         images = self.db_client.query_model(Image)
         actual = len(images)
