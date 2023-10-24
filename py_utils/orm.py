@@ -162,9 +162,10 @@ class DbClient():
         session = self._sessionmaker()
 
         # Use SQLAlchemy's inspect function to get the columns of the table
-        mapper = inspect(model_class)
-        columns = [column.key for column in mapper.columns]
+        # To return a dict instead:
+        # mapper = inspect(model_class)
+        # columns = [column.key for column in mapper.columns]
+        # return [{column: getattr(result, column) for column in columns} for result in results]
 
         # Execute the query and return the results
-        results = session.query(model_class).all()
-        return [{column: getattr(result, column) for column in columns} for result in results]
+        return session.query(model_class).all()
