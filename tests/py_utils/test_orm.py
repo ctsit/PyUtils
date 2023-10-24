@@ -51,6 +51,7 @@ class Image(Base):
 
     def __str__(self):
         return (
+            f"id: {self.id},"
             f"core: {self.core}, directory: {self.directory},"
             f"image_type: {self.image_type}, fs_mod_date: {self.fs_mod_date}"
         )
@@ -99,6 +100,32 @@ class TestOrm(unittest.TestCase):
         actual = len(images)
 
         self.assertEqual(expected, actual)
+
+    def test_update_model(self):
+        self.db_client.create_tables(Base, [Image])
+
+        original_data = {
+            "core": "bmc",
+            "directory": os.getcwd(),
+            "image_type": "mri",
+            "fs_mod_date": datetime.now()
+        }
+        image = Image(**original_data)
+
+        updated_data = {
+            "core": "dc",
+            "directory": os.getcwd(),
+            "image_type": "mri",
+            "fs_mod_date": datetime.now()
+        }
+        actual = Image(**updated_data)
+
+        created_image = self.db_client.insert_data(image)
+        expected = Image(**self.db_client.update_model(Image,
+                         created_image["id"], **{"core": "dc"})
+                         )
+
+        self.assertEqual(actual, expected)
 
     def test_return_type_matches_model(self):
         self.db_client.create_tables(Base, [Image])
