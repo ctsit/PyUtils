@@ -6,6 +6,23 @@ import re
 import smtplib
 
 
+def _contains_html(content: str) -> bool:
+    """Utility function that checks if the content contains html.
+
+    Args:
+        content (str): The content to test for html.
+
+    Returns:
+        bool: Returns True if the content contains html, and False otherwise.
+    """
+    pattern = r"<[^>]*>"
+
+    if re.search(pattern, content) is not None:
+        return True
+    else:
+        return False
+
+
 def directory_exists(path_to_dir: str) -> bool:
     """Checks if the directory exists
 
@@ -92,9 +109,7 @@ def send_email(
     msg["From"] = sender
     msg["To"] = ", ".join(recipients)
 
-    pattern = r"<[^>]*>"
-
-    if re.search(pattern, body) is not None:
+    if _contains_html(body):
         msg.set_content(body, subtype='html')
     else:
         msg.set_content(body)
