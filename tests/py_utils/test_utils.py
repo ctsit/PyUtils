@@ -9,6 +9,13 @@ class TestUtils(unittest.TestCase):
     first_duplicate_file_name = 'get_unique_filename_test (1).file'
     second_duplicate_file_name = 'get_unique_filename_test (2).file'
 
+    def test_contains_html(self):
+        html_markup = "<html><p></p></html>"
+        non_html_text = "This is a sentence with special characters, < ? ! . '"
+
+        self.assertEquals(True, utils._contains_html(html_markup))
+        self.assertEquals(False, utils._contains_html(non_html_text))
+
     def test_get_unique_filename_base(self):
         self.assertEquals(utils.get_unique_filename(
             self.original_file_name), self.original_file_name)
