@@ -140,7 +140,7 @@ class DbClient():
                 raise Exception(f"Model failed validation: {model}")
 
             session.commit()
-            logging.info(f"Data inserted successfully for {model.__tablename__}")
+            logging.debug(f"Data inserted successfully for {model.__tablename__}")
 
             return self._convert_model_to_dict(model)
         except AttributeError as e:
