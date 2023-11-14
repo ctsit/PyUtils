@@ -25,11 +25,11 @@ class DbClient():
         """
         try:
             connection_string = f"{driver}:///{url}"
-            logging.info(f"Attempting to connect to: {url}")
+            logging.debug(f"Attempting to connect to: {url}")
 
             self._engine = create_engine(connection_string, echo=echo)
             self._engine.connect()
-            logging.info(f"Successfully connected to: {url}")
+            logging.debug(f"Successfully connected to: {url}")
         except OperationalError as e:
             logging.error(f"Connection failed: {e}")
             raise e
@@ -106,9 +106,9 @@ class DbClient():
         for model in models:
             if not inspector.has_table(model.__tablename__):
                 base.metadata.create_all(self._engine)
-                logging.info(f"Creating table: {model.__tablename__}")
+                logging.debug(f"Creating table: {model.__tablename__}")
             else:
-                logging.info(f"Table already exists: {model.__tablename__}")
+                logging.debug(f"Table already exists: {model.__tablename__}")
 
     def insert_data(self, model) -> dict:
         """Insert model data into database.
@@ -140,7 +140,7 @@ class DbClient():
                 raise Exception(f"Model failed validation: {model}")
 
             session.commit()
-            logging.info(f"Data inserted successfully for {model.__tablename__}")
+            logging.debug(f"Data inserted successfully for {model.__tablename__}")
 
             return self._convert_model_to_dict(model)
         except AttributeError as e:
