@@ -8,11 +8,10 @@ import sqlite3
 
 
 class DbClient():
-    def __init__(self, driver: str, url: str, echo=False):
+    def __init__(self, url: str, echo=False):
         """Creates a `DbClient`
 
         Args:
-            driver (str): The driver to use for the database connection i.e., `sqlite`.
             url (str): The database url.
             echo (bool): Whether to print `sqlalchemy` output to the console.
 
@@ -24,12 +23,11 @@ class DbClient():
             Exception: When failing to create a `sqlalchemy` engine.
         """
         try:
-            connection_string = f"{driver}:///{url}"
-            logging.info(f"Attempting to connect to: {url}")
+            logging.debug(f"Attempting to connect to: {url}")
 
-            self._engine = create_engine(connection_string, echo=echo)
+            self._engine = create_engine(url, echo=echo)
             self._engine.connect()
-            logging.info(f"Successfully connected to: {url}")
+            logging.debug("Successfully connected to db.")
         except OperationalError as e:
             logging.error(f"Connection failed: {e}")
             raise e
@@ -37,6 +35,19 @@ class DbClient():
             logging.error(f"Failed to create engine with error of type: {type(e)}")
             raise e
         self._sessionmaker = sessionmaker(bind=self._engine)
+
+    @classmethod
+    def mysql(cls, connection_string: str, echo=False):
+        """Create a mysql DbClient.
+
+        This is a wrapper around the constructor to simplify creating a mysql client.
+
+        Args:
+            connection_string (str): The db connection string i.e., `<user>:<password>@<host>:<port>/<database>`.
+            echo (bool): Whether to print `sqlalchemy` output to the console.
+        """
+        url = f"mysql://{connection_string}"
+        return cls(url, echo)
 
     @classmethod
     def sqlite(cls, path: str, echo=False):
@@ -66,7 +77,8 @@ class DbClient():
                 "Failed to create sqlite db. Double check that the path is correct.")
             raise e
 
-        return cls("sqlite", path, echo)
+        url = f"sqlite:///{path}"
+        return cls(url, echo)
 
     def _convert_model_to_dict(self, model) -> dict:
         """Returns dictionary representation of the provided model
@@ -106,9 +118,9 @@ class DbClient():
         for model in models:
             if not inspector.has_table(model.__tablename__):
                 base.metadata.create_all(self._engine)
-                logging.info(f"Creating table: {model.__tablename__}")
+                logging.debug(f"Creating table: {model.__tablename__}")
             else:
-                logging.info(f"Table already exists: {model.__tablename__}")
+                logging.debug(f"Table already exists: {model.__tablename__}")
 
     def insert_data(self, model) -> dict:
         """Insert model data into database.
@@ -140,7 +152,7 @@ class DbClient():
                 raise Exception(f"Model failed validation: {model}")
 
             session.commit()
-            logging.info(f"Data inserted successfully for {model.__tablename__}")
+            logging.debug(f"Data inserted successfully for {model.__tablename__}")
 
             return self._convert_model_to_dict(model)
         except AttributeError as e:
