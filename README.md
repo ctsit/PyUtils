@@ -14,35 +14,37 @@ PyUtils is a collection of utility python functions for use across CTS-IT python
 
 ## Example Usage
 ```python
+from datetime import datetime
 from py_utils.orm import DbClient
 from py_utils import utils
-from sqlalchemy import Column, DateTime, func, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlmodel import Field, SQLModel
+from typing import Optional
 
-Base = delcarative_base()
 
-class DataClass(Base):
-    __tablename__ = "data_class"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=func.now())
-    modified_date = Column(DateTime, default=func.now(), onupdate=func.now())
-    title = Column(String)
+class Image(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_date: datetime = Field(default=datetime.utcnow(), nullable=False)
+    modified_date: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    core: str
+    directory: str
+    image_type: str
 
 
 def main():
     db_client = DbClient.sqlite("test_db.db")
-    db_client.create_tables(Base, [DataClass])
+    db_client.create_tables()
 
     # create dummy data
     for i in range(10):
         data_to_insert = {
-            title: f"title: ${i}"
+            core: f"title: ${i}",
+            directory: "",
+           image_type: "mri",
         }
-        new_data_class = DataClass(**data_to_insert)
-        db_client.insert_data(new_data_class)
+        new_image = Image(**data_to_insert)
+        db_client.insert_data(image)
 
-    inserted_data = db_client.query_model(DataClass)
+    inserted_data = db_client.query_model(Image) # returns an `Image` class
 
     # optionally send email
     # utils.send_email()

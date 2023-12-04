@@ -1,10 +1,29 @@
-from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import Field, Session, create_engine, SQLModel, select
+from typing import List, Optional, Type, TypeVar
 
 import logging
 import os
 import sqlite3
+
+
+class DefaultModel(SQLModel):
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+
+_T = TypeVar("_T", bound=SQLModel)
+
+
+def convert_model_to_dict(model) -> dict:
+    """Returns dictionary representation of the provided model
+
+    Args:
+        model (SQLModel): A model to convert to a dictionary
+
+    Returns:
+        dict
+    """
+    return {key: getattr(model, key) for key in model.__table__.columns.keys()}
 
 
 class DbClient():
@@ -13,14 +32,14 @@ class DbClient():
 
         Args:
             url (str): The database url.
-            echo (bool): Whether to print `sqlalchemy` output to the console.
+            echo (bool): Whether to print `sqlmodel` output to the console.
 
         Returns:
             An instance of DbClient connected to the database.
 
         Raises:
             Operational Error: When failing to connect to the database.
-            Exception: When failing to create a `sqlalchemy` engine.
+            Exception: When failing to create a `sqlmodel` engine.
         """
         try:
             logging.debug(f"Attempting to connect to: {url}")
@@ -34,7 +53,7 @@ class DbClient():
         except Exception as e:
             logging.error(f"Failed to create engine with error of type: {type(e)}")
             raise e
-        self._sessionmaker = sessionmaker(bind=self._engine)
+        # self._sessionmaker = sessionmaker(bind=self._engine)
 
     @classmethod
     def mysql(cls, connection_string: str, echo=False):
@@ -44,7 +63,7 @@ class DbClient():
 
         Args:
             connection_string (str): The db connection string i.e., `<user>:<password>@<host>:<port>/<database>`.
-            echo (bool): Whether to print `sqlalchemy` output to the console.
+            echo (bool): Whether to print `sqlmodel` output to the console.
         """
         url = f"mysql://{connection_string}"
         return cls(url, echo)
@@ -58,7 +77,7 @@ class DbClient():
 
         Args:
             path (str): The path to the sqlite db.
-            echo (bool): Whether to print `sqlalchemy` output to the console.
+            echo (bool): Whether to print `sqlmodel` output to the console.
 
         Returns:
             An instance of DbClient connected to a sqlite database.
@@ -80,155 +99,113 @@ class DbClient():
         url = f"sqlite:///{path}"
         return cls(url, echo)
 
-    def _convert_model_to_dict(self, model) -> dict:
-        """Returns dictionary representation of the provided model
-
-        Args:
-            model: A `sqlalchemy` data class
-
-        Returns:
-            dict
-        """
-        return {key: getattr(model, key) for key in model.__table__.columns.keys()}
-
-    def create_tables(self, base, models: list):
+    def create_tables(self):
         """Creates the database tables
 
-        The base is passed in to decouple model definition from this package. This way models can
-        be defined locally in a separate package rather than in this utility package.
-
-        Args:
-            base (`sqlalchemy.ext.declarative:declarative_base`): An instance of `declarative_base`
-            used to define `sqlalchemy` data models. See `test_orm.py` for an example data class
-            definition.
-            models (list): A list of `sqlalchemy` data tables.
+        `SQLModel`s need to be imported before calling this function. Refer to:
+        https://sqlmodel.tiangolo.com/tutorial/create-db-and-table/#sqlmodel-metadata-order-matters
 
         Returns:
             None
 
         Raises:
-            Exception: When failing to inspect the `sqlalchemy` engine.
+            Exception: When failing to create tables in `sqlmodel` engine.
         """
         try:
-            inspector = inspect(self._engine)
+            SQLModel.metadata.create_all(self._engine)
         except Exception as e:
-            logging.error(f"Failed to inspect engine with error of type: {type(e)}")
+            logging.error(f"Failed to create tables: {type(e)}")
             raise e
 
-        for model in models:
-            if not inspector.has_table(model.__tablename__):
-                base.metadata.create_all(self._engine)
-                logging.debug(f"Creating table: {model.__tablename__}")
-            else:
-                logging.debug(f"Table already exists: {model.__tablename__}")
-
-    def insert_data(self, model) -> dict:
-        """Insert model data into database.
-
-        The model is expected to have a `validate` function defined. See `test_orm.py` for an
-        example validate function.
+    def insert_data(self, model: _T) -> _T:
+        """Insert model into database.
 
         Args:
-            model: A `sqlalchemy` data table class.
+            model (SQLModel): The model to insert into the database.
 
         Returns:
-            dict
+            The inserted entry.
 
         Raises:
-            Exception: When failing to create a session to the `sqlalchemy` engine.
+            Exception: When failing to create a session to the `sqlmodel` engine.
         """
-        try:
-            session = self._sessionmaker()
-        except Exception as e:
-            logging.error(f"fFailed to create session with error of type: {type(e)}")
-            raise e
+        # more information on setting expire_on_commit:
+        # https://stackoverflow.com/questions/8253978/sqlalchemy-get-object-not-bound-to-a-session
+        # https://groups.google.com/g/sqlalchemy/c/uYIawg4SUQQ?pli=1
+        with Session(self._engine, expire_on_commit=False) as session:
+            try:
+                session.add(model)
+                session.commit()
+                logging.debug(f"Data inserted successfully for {model.__tablename__}")
 
-        session.add(model)
+                return model
+            except IntegrityError as e:
+                # Rollback the session in case of any integrity error
+                session.rollback()
+                logging.error(f"Integrity Error: {str(e)}")
+                raise e
+            except Exception as e:
+                # Rollback the session in case of any other error
+                session.rollback()
+                logging.error(f"Error inserting data: {str(e)}")
+                raise e
+            finally:
+                # Close the session
+                session.close()
 
-        try:
-            is_valid = model.validate()
-
-            if not is_valid:
-                raise Exception(f"Model failed validation: {model}")
-
-            session.commit()
-            logging.debug(f"Data inserted successfully for {model.__tablename__}")
-
-            return self._convert_model_to_dict(model)
-        except AttributeError as e:
-            session.rollback()
-            logging.error(
-                f"Attribute Error: {str(e)}. Verify that a `validate` has been defined as "
-                f"part of the data class")
-            raise e
-        except IntegrityError as e:
-            # Rollback the session in case of any integrity error
-            session.rollback()
-            logging.error(f"Integrity Error: {str(e)}")
-            raise e
-        except Exception as e:
-            # Rollback the session in case of any other error
-            session.rollback()
-            logging.error(f"Error inserting data: {str(e)}")
-            raise e
-        finally:
-            # Close the session
-            session.close()
-
-    def query_model(self, model_class) -> list:
-        """Queries the database for the provided `model_class`.
+    def query_model(self, model: Type[_T]) -> List[_T]:
+        """Queries the database for the provided `model`.
 
         Args:
-            model_class: The `sqlalchemy` data class to query the database for.
+            model (Type[SQLModel]): The model class definition.
 
         Returns:
-            list: A list of the `model_class`.
+            list (List[SQLModel]): A list of all models.
         """
-        session = self._sessionmaker()
+        with Session(self._engine) as session:
+            # Use SQLModel's inspect function to get the columns of the table
+            # To return a dict instead:
+            # mapper = inspect(model_class)
+            # columns = [column.key for column in mapper.columns]
+            # return [{column: getattr(result, column) for column in columns} for result in results]
 
-        # Use SQLAlchemy's inspect function to get the columns of the table
-        # To return a dict instead:
-        # mapper = inspect(model_class)
-        # columns = [column.key for column in mapper.columns]
-        # return [{column: getattr(result, column) for column in columns} for result in results]
+            return list(session.exec(select(model)).all())
 
-        # Execute the query and return the results
-        return session.query(model_class).all()
-
-    def update_model(self, model_class, id, **kwargs) -> dict:
+    def update_model(self, model: _T, pk_field: str = "id", **kwargs) -> _T | None:
         """Update model with kwargs provided
 
         Args:
-            model: A `sqlalchemy` data table class.
+            model (Type[SQLModel]): The model class definition
+            pk_field (str): The primary key field of the provided model. Defaults to `id`.
+            **kwargs: A dictionary of the keys with updated values.
 
         Returns:
-            dict
+            The updated entry.
 
         Raises:
-            Exception: When failing to create a session to the `sqlalchemy` engine.
+            Exception: When failing to create a session to the `sqlmodel` engine.
         """
-        try:
-            session = self._sessionmaker()
-        except Exception as e:
-            logging.error(f"fFailed to create session with error of type: {type(e)}")
-            raise e
+        # more information on setting expire_on_commit:
+        # https://stackoverflow.com/questions/8253978/sqlalchemy-get-object-not-bound-to-a-session
+        # https://groups.google.com/g/sqlalchemy/c/uYIawg4SUQQ?pli=1
+        with Session(self._engine, expire_on_commit=False) as session:
+            try:
+                # Retrieve the object that you want to update
+                object_to_update = session.get(type(model), getattr(model, pk_field))
+                # object_to_update = session.query(model.__tablename__).get(getattr(model, pk_field))
+                if object_to_update is not None:
 
-        try:
-            # Retrieve the object that you want to update
-            object_to_update = session.query(model_class).get(id)
+                    # Update the object with the provided values
+                    for key, value in kwargs.items():
+                        setattr(object_to_update, key, value)
 
-            # Update the object with the provided values
-            for key, value in kwargs.items():
-                setattr(object_to_update, key, value)
+                    session.commit()
 
-            session.commit()
+                    return object_to_update
 
-            return self._convert_model_to_dict(object_to_update)
-        except Exception as e:
-            # Rollback the session in case of any other error
-            session.rollback()
-            logging.error(f"Error inserting data: {str(e)}")
-            raise e
-        finally:
-            # Close the session
-            session.close()
+                return None
+            except Exception as e:
+                # Rollback the session in case of any other error
+                session.rollback()
+                logging.error(f"Error inserting data: {str(e)}")
+                raise e

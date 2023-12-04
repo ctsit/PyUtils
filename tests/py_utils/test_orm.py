@@ -1,25 +1,13 @@
 from datetime import datetime
-from py_utils.orm import DbClient
-from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy import Column, DateTime, Enum, func, ForeignKey, Integer, String
+from py_utils.orm import convert_model_to_dict, DbClient
+from sqlmodel import Column, Enum, Field, Relationship, SQLModel
+from typing import List, Optional
 
-import enum
 import os
 import unittest
 
-Base = declarative_base()
 
-
-class InvalidDataClass(Base):
-    __tablename__ = "invalid_data_class"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=func.now())
-    modified_date = Column(DateTime, default=func.now(), onupdate=func.now())
-    title = Column(String)
-
-
-class ImageStatusTypes(enum.Enum):
+class ImageStatusTypes(str, Enum):
     new = "NEW"
     modified = "MODIFIED"
     failed_check = "FAILED_CHECKS"
@@ -29,25 +17,16 @@ class ImageStatusTypes(enum.Enum):
     uploaded_to_redcap = "UPLOADED_TO_REDCAP"
 
 
-class Image(Base):
-    __tablename__ = 'image'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=func.now())
-    modified_date = Column(DateTime, default=func.now(), onupdate=func.now())
-    core = Column(String)
-    directory = Column(String)
-    image_type = Column(String)
-    fs_mod_date = Column(DateTime)
-    image_status = relationship("ImageStatus", back_populates="image")
-
-    def validate(self):
-        if self.core is not None \
-                and self.image_type is not None \
-                and self.fs_mod_date is not None:
-            return True
-
-        return False
+# class Image(DefaultModel):
+class Image(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_date: datetime = Field(default=datetime.utcnow(), nullable=False)
+    modified_date: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    core: str
+    directory: str
+    image_type: str
+    fs_mod_date: datetime
+    image_status: List["ImageStatus"] = Relationship(back_populates="image")
 
     def __str__(self):
         return (
@@ -60,18 +39,13 @@ class Image(Base):
         return self.directory == other.directory
 
 
-class ImageStatus(Base):
-    __tablename__ = 'image_status'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    created_date = Column(DateTime, default=func.now())
-    modified_date = Column(DateTime, default=func.now(), onupdate=func.now())
-    status = Column(Enum(ImageStatusTypes))
-    image_id = Column(Integer, ForeignKey("image.id"))
-    image = relationship("Image", back_populates="image_status")
-
-    def validate(self):
-        return self.status in ImageStatusTypes
+class ImageStatus(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_date: datetime = Field(default=datetime.utcnow(), nullable=False)
+    modified_date: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    status: ImageStatusTypes = Field(sa_column=Column(Enum))
+    image_id: Optional[int] = Field(default=None, foreign_key="image.id")
+    image: Image = Relationship(back_populates="image_status")
 
 
 class TestOrm(unittest.TestCase):
@@ -82,7 +56,7 @@ class TestOrm(unittest.TestCase):
         return super().setUp()
 
     def test_sqlite_crud_operations(self):
-        self.db_client.create_tables(Base, [Image])
+        self.db_client.create_tables()
 
         expected = 10
 
@@ -102,7 +76,7 @@ class TestOrm(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     def test_update_model(self):
-        self.db_client.create_tables(Base, [Image])
+        self.db_client.create_tables()
 
         original_data = {
             "core": "bmc",
@@ -121,14 +95,14 @@ class TestOrm(unittest.TestCase):
         actual = Image(**updated_data)
 
         created_image = self.db_client.insert_data(image)
-        expected = Image(**self.db_client.update_model(Image,
-                         created_image["id"], **{"core": "dc"})
-                         )
+        updated_image = self.db_client.update_model(created_image, **{"core": "dc"})
+
+        expected = Image(**convert_model_to_dict(updated_image))
 
         self.assertEqual(actual, expected)
 
     def test_return_type_matches_model(self):
-        self.db_client.create_tables(Base, [Image])
+        self.db_client.create_tables()
 
         data_to_insert = {
             "core": "bmc",
@@ -143,24 +117,6 @@ class TestOrm(unittest.TestCase):
         expected = self.db_client.query_model(Image)
 
         self.assertIsInstance(expected, actual)
-
-    def test_invalid_data_class(self):
-        sqlite_db = "test_db.db"
-        db_client = DbClient.sqlite(sqlite_db)
-        db_client.create_tables(Base, [InvalidDataClass])
-
-        data_to_insert = {
-            "title": "test title"
-        }
-        invalid_data_class = InvalidDataClass(**data_to_insert)
-
-        try:
-            db_client.insert_data(invalid_data_class)
-        except AttributeError as actual:
-            self.assertIsInstance(actual, AttributeError)
-            return
-
-        assert False
 
     def tearDown(self) -> None:
         os.remove(self.sqlite_db)
