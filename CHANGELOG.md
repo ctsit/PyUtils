@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.0.0 - 2023-12-06
+### Changed
+ * Remove `poetry.lock` (Michael Bentz)
+ * __[Breaking Change]__ Refactor to use SQLModel (Michael Bentz)
+
 ## v1.1.0 - 2023-11-17
 ### Added
 * Added DbClient
