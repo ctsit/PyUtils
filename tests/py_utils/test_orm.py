@@ -95,7 +95,7 @@ class TestOrm(unittest.TestCase):
         actual = Image(**updated_data)
 
         created_image = self.db_client.insert_data(image)
-        updated_image = self.db_client.update_model(created_image, **{"core": "dc"})
+        updated_image = self.db_client.update_model(model=created_image, values={"core": created_image.core})
 
         expected = Image(**convert_model_to_dict(updated_image))
 
