@@ -1,5 +1,12 @@
 # Change Log
 
+## v2.1.0 - 2023-12-11
+### Changed
+ * Return model on crud function calls (Michael Bentz)
+### Fixed
+ * Fix update_model function (Michael Bentz)
+ 
+
 ## v2.0.0 - 2023-12-06
 ### Changed
  * Remove `poetry.lock` (Michael Bentz)
