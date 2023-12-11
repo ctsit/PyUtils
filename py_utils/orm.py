@@ -167,7 +167,7 @@ class DbClient():
 
             return list(session.exec(select(model)).all())
 
-    def update_model(self, model: _T, values: dict, pk_field: str = "id") -> _T | None:
+    def update_model(self, model: _T, values: dict, pk_field: str = "id") -> _T:
         """Update model with values provided
 
         Args:
