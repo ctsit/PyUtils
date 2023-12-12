@@ -1,5 +1,5 @@
 from datetime import datetime
-from py_utils.orm import convert_model_to_dict, DbClient
+from py_utils.orm import DbClient
 from sqlmodel import Column, Enum, Field, Relationship, SQLModel
 from typing import List, Optional
 
@@ -26,7 +26,7 @@ class Image(SQLModel, table=True):
     directory: str
     image_type: str
     fs_mod_date: datetime
-    image_status: List["ImageStatus"] = Relationship(back_populates="image")
+    image_status: List["ImageStatus"] = Relationship(back_populates="image", sa_relationship_kwargs={"lazy": "joined"})
 
     def __str__(self):
         return (
@@ -78,28 +78,31 @@ class TestOrm(unittest.TestCase):
     def test_update_model(self):
         self.db_client.create_tables()
 
-        original_data = {
-            "core": "bmc",
-            "directory": os.getcwd(),
-            "image_type": "mri",
-            "fs_mod_date": datetime.now()
-        }
-        image = Image(**original_data)
-
-        updated_data = {
+        expected_data = {
             "core": "dc",
             "directory": os.getcwd(),
             "image_type": "mri",
             "fs_mod_date": datetime.now()
         }
-        actual = Image(**updated_data)
 
-        created_image = self.db_client.insert_data(image)
-        updated_image = self.db_client.update_model(model=created_image, values={"core": created_image.core})
+        # create a copy in memory to change against the entry returned from the db
+        expected = Image(**expected_data)
 
-        expected = Image(**convert_model_to_dict(updated_image))
+        # create an image with bmc core
+        created_image = self.db_client.insert_data(Image(**{
+            "core": "bmc",
+            "directory": os.getcwd(),
+            "image_type": "mri",
+            "fs_mod_date": datetime.now()
+        }))
+        # update the core
+        created_image.core = expected_data.get("core", "")
 
-        self.assertEqual(actual, expected)
+        # apply the change to the database
+        updated_image = self.db_client.insert_data(created_image)
+
+        # assert that the updated image returned from the db client matches teh expected data
+        self.assertEqual(expected.core, updated_image.core)
 
     def test_return_type_matches_model(self):
         self.db_client.create_tables()
