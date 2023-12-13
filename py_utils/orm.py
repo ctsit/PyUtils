@@ -1,3 +1,4 @@
+from deprecated import deprecated
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlmodel import Session, create_engine, SQLModel, select
 from typing import List, Type, TypeVar
@@ -128,6 +129,8 @@ class DbClient():
         # more information on setting expire_on_commit:
         # https://stackoverflow.com/questions/8253978/sqlalchemy-get-object-not-bound-to-a-session
         # https://groups.google.com/g/sqlalchemy/c/uYIawg4SUQQ?pli=1
+        # In short, setting `expire_on_commit` to `False` allows accessing a field of the model after it has been
+        # committed
         with Session(self._engine, expire_on_commit=False) as session:
             try:
                 session.add(model)
@@ -145,9 +148,6 @@ class DbClient():
                 session.rollback()
                 logging.error(f"Error inserting data: {str(e)}")
                 raise e
-            finally:
-                # Close the session
-                session.close()
 
     def query_model(self, model: Type[_T]) -> List[_T]:
         """Queries the database for the provided `model`.
@@ -158,15 +158,21 @@ class DbClient():
         Returns:
             list (List[SQLModel]): A list of all models.
         """
+        models = []
         with Session(self._engine) as session:
             # Use SQLModel's inspect function to get the columns of the table
             # To return a dict instead:
             # mapper = inspect(model_class)
             # columns = [column.key for column in mapper.columns]
             # return [{column: getattr(result, column) for column in columns} for result in results]
+            statement = select(model)
+            results = session.exec(statement).unique()
+            for entry in results:
+                models.append(entry)
 
-            return list(session.exec(select(model)).all())
+            return models
 
+    @deprecated(version="2.1.1", reason="Use insert_data instead. This function will soon be removed")
     def update_model(self, model: _T, values: dict, pk_field: str = "id") -> _T:
         """Update model with values provided
 
@@ -181,12 +187,8 @@ class DbClient():
         Raises:
             Exception: When failing to create a session to the `sqlmodel` engine.
         """
-        # more information on setting expire_on_commit:
-        # https://stackoverflow.com/questions/8253978/sqlalchemy-get-object-not-bound-to-a-session
-        # https://groups.google.com/g/sqlalchemy/c/uYIawg4SUQQ?pli=1
-        with Session(self._engine, expire_on_commit=False) as session:
+        with Session(self._engine) as session:
             try:
-                # Retrieve the object that you want to update
                 object_to_update = session.get(type(model), getattr(model, pk_field))
                 if object_to_update is not None:
 
