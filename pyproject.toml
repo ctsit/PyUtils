@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyutils"
-version = "2.1.1"
+version = "2.2.0"
 description = ""
 authors = ["Michael Bentz <mbentz@ufl.edu>"]
 license = "MIT"
@@ -11,6 +11,7 @@ packages = [{ include = "py_utils" }]
 python = "^3.11"
 sqlalchemy = "^2.0.20"
 sqlmodel = "^0.0.12"
+deprecated = "^1.2.14"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/ctsit/PyUtils"

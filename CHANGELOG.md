@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.2.0 - 2023-12-13
+### Added
+ * Add eager loading support for `query_model` and deprecate `update_model` (Michael Bentz)
+
 ## v2.1.0 - 2023-12-11
 ### Changed
  * Return model on crud function calls (Michael Bentz)
