@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.3.0 - 2024-02-22
+### Added
+ * Add configure_logging (Michael Bentz)
+ * Add ScriptHelper (Michael Bentz)
+
 ## v2.2.0 - 2023-12-13
 ### Added
  * Add eager loading support for `query_model` and deprecate `update_model` (Michael Bentz)
