@@ -1,9 +1,17 @@
+from datetime import datetime
 from email.message import EmailMessage
 from email.policy import SMTP
+from .models import JobStatus, JobStatusLevels
+from .orm import DbClient
+from typing import Dict
 
+import getpass
+import json
+import pytz
 import os
 import re
 import smtplib
+import socket
 
 
 def _contains_html(content: str) -> bool:
@@ -128,3 +136,68 @@ def send_email(
     else:
         with smtplib.SMTP(host) as server:
             server.send_message(msg)
+
+
+class ScriptHelper():
+    """A helper class to log `JobStatus`.
+
+    An instance of `ScriptHelper` should be instantiated at the beginning of a script i.e., `helper = ScriptHelper()`,
+    and then used to call `log_failed_job` or `log_successful_job` when the script fails or completes. Internally,
+    `ScriptHelper` automatically captures `start_time`, `end_time`, `executed_by`, and `elapsed_time`, `script_path`,
+    `host`, and provides that information when attempting to log the `JobStatus`
+
+    References:
+    - The structure of `JobStatus` can be seen in `py_custodian/models.py`
+    """
+
+    def __init__(self, script_name: str, db_client: DbClient, tz: pytz.tzinfo.BaseTzInfo = pytz.utc):
+        """Creates an instance of ScriptHelper defaulting the timezone to use UTC.
+
+        Args:
+            script_name (str): The name of the script that is creating an instance of this class.
+            db_client (DbClient): The database client to write logs with.
+            tz (pytz.tzinfo.BaseTzInfo, optional): The timezone to use for datetime fields. Defaults to pytz.utc.
+        """
+        self.__tz = tz
+        self.__start_time = datetime.now(self.__tz)
+        self.__parent_script = script_name
+        self.__executed_by = getpass.getuser()
+
+        self._db_client = db_client
+        self._db_client.create_tables()
+
+    def log_failed_job(self, summary_data: dict, error: str):
+        """Attempt to log a failed `JobStatus` entry to the log database.
+
+        Args:
+            summary_data (Dict): Summary data to capture in the log entry.
+        """
+        job_status = self._get_job_status_of_type(summary_data, error, False)
+        self._db_client.insert_data(job_status)
+
+    def log_successful_job(self, summary_data: dict):
+        """Attempt to log a successful `JobStatus` entry to the log database.
+
+        Args:
+            summary_data (Dict): Summary data to capture in the log entry.
+        """
+        job_status = self._get_job_status_of_type(summary_data, "", True)
+        self._db_client.insert_data(job_status)
+
+    def _get_job_status_of_type(self, summary_data: Dict, error: str, succeeded: bool):
+        level = JobStatusLevels.INFO if succeeded else JobStatusLevels.ERROR
+        end_time = datetime.now(self.__tz)
+        elapsed_time = int((end_time - self.__start_time).total_seconds())
+
+        job_status = JobStatus(
+            executed_by=self.__executed_by,
+            host=socket.gethostname(),
+            script_path=os.path.abspath(self.__parent_script),
+            script_name=self.__parent_script,
+            script_start_time=self.__start_time,
+            script_end_time=end_time,
+            elapsed_time=elapsed_time,
+            job_summary_data=json.dumps({"data": json.dumps(summary_data), "error": error}),
+            level=level,
+        )
+        return job_status
