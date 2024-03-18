@@ -16,15 +16,15 @@ class JobStatus(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     created_date: datetime = Field(default=datetime.utcnow(), nullable=False)
     modified_date: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    host: str
-    script_path: str
-    script_name: str
-    executed_by: str
-    script_start_time: datetime
-    script_end_time: datetime
-    elapsed_time: int
-    job_summary_data: str
-    level: JobStatusLevels
+    host: str = Field(nullable=True)
+    script_path: str = Field(nullable=True)
+    script_name: str = Field(nullable=True)
+    executed_by: str = Field(nullable=True)
+    script_start_time: datetime = Field(nullable=True)
+    script_end_time: datetime = Field(nullable=True)
+    elapsed_time: int = Field(nullable=True)
+    job_summary_data: str = Field(nullable=True, max_length=15000)
+    level: JobStatusLevels = Field(nullable=True)
 
     def __str__(self):
         return (
