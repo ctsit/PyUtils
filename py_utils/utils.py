@@ -175,7 +175,7 @@ class ScriptHelper():
         job_status = self._get_job_status_of_type(summary_data, error, False)
         self._db_client.insert_data(job_status)
 
-    def log_successful_job(self, summary_data: dict):
+    def log_successful_job(self, summary_data: dict) -> JobStatus:
         """Attempt to log a successful `JobStatus` entry to the log database.
 
         Args:
@@ -183,6 +183,7 @@ class ScriptHelper():
         """
         job_status = self._get_job_status_of_type(summary_data, "", True)
         self._db_client.insert_data(job_status)
+        return job_status
 
     def _get_job_status_of_type(self, summary_data: Dict, error: str, succeeded: bool):
         level = JobStatusLevels.INFO if succeeded else JobStatusLevels.ERROR
