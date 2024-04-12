@@ -1,5 +1,10 @@
 # Change Log
 
+## v2.3.1 - 2024-04-12
+### Added
+ * Add verbose support for `configure_logging` (Vaibhavi Deshpande)
+ * Make `JobStatus` fields nullable and increase job summary data length (Michael Bentz)
+
 ## v2.3.0 - 2024-02-22
 ### Added
  * Add configure_logging (Michael Bentz)
