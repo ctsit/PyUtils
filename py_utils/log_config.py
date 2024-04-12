@@ -13,13 +13,14 @@ todays_date = datetime.today().strftime('%Y-%m-%d')
 log_filename = os.path.join(logs_dir, f"log-{todays_date}.log")
 
 
-def configure_logging(handlers: List[logging.Handler] = []):
+def configure_logging(handlers: List[logging.Handler] = [], verbose: bool = False):
     """Configures the root logger
 
     Configures the root logger with default settings.
 
     Args:
         handlers (List[logging.Handler]): The handlers to add to the logger
+        verbose (bool): optional, if set to TRUE set Level to logging.DEBUG
 
     Returns:
         None
@@ -28,6 +29,8 @@ def configure_logging(handlers: List[logging.Handler] = []):
 
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
+    if verbose:
+        logger.setLevel(logging.DEBUG)
 
     # create stream handler
     stream_handler = logging.StreamHandler(sys.stderr)
