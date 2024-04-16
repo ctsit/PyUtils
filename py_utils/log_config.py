@@ -28,14 +28,17 @@ def configure_logging(handlers: List[logging.Handler] = [], verbose: bool = Fals
     formatter = logging.Formatter(fmt)
 
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+
+    log_level = logging.INFO
     if verbose:
-        logger.setLevel(logging.DEBUG)
+        log_level = logging.DEBUG
+
+    logger.setLevel(log_level)
 
     # create stream handler
     stream_handler = logging.StreamHandler(sys.stderr)
     stream_handler.setFormatter(formatter)
-    stream_handler.setLevel(logging.INFO)
+    stream_handler.setLevel(log_level)
 
     # create a file handler
     file_handler = logging.FileHandler(utils.get_unique_filename(log_filename))

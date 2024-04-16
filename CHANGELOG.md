@@ -1,5 +1,11 @@
 # Change Log
 
+## v2.4.0 - 2024-04-16
+### Added
+ * Added Report Data table (Sai Pavan Kamma)
+### Fixed
+ * Add log level to `StreamHandler` (Michael Bentz)
+
 ## v2.3.1 - 2024-04-12
 ### Added
  * Add verbose support for `configure_logging` (Vaibhavi Deshpande)
